@@ -1,0 +1,29 @@
+# Phase 4 — Kubernetes RBAC: app pods only get the bare minimum.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: musclequant-app
+  namespace: musclequant
+rules:
+  # Allow the pod to read its own ConfigMaps and Secrets.
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  # Allow self-discovery of pods in the same namespace (used by health probes / debugging).
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: musclequant-app
+  namespace: musclequant
+subjects:
+  - kind: ServiceAccount
+    name: musclequant-app
+    namespace: musclequant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: musclequant-app

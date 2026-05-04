@@ -1,0 +1,28 @@
+# Phase 5 — public entrypoint via an internet-facing ALB.
+# TLS in transit terminated at the ALB using a self-signed ACM-imported cert
+# (rendered by the Makefile from the cert-manager-issued cert).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: musclequant
+  namespace: musclequant
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    # Populated by the Makefile from the ACM cert ARN (uploaded from the cert-manager Secret).
+    alb.ingress.kubernetes.io/certificate-arn: ${ACM_CERT_ARN}
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80

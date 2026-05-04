@@ -1,0 +1,36 @@
+# Scenario 2 — Compromised pod attempts cloud-credential theft.
+# This pod intentionally lands in a NON-restricted namespace so it boots; from there
+# it tries to (a) hit the EC2 IMDS for instance-role credentials and (b) reach
+# Secrets Manager directly. Both should fail.
+#
+# Detection lives in the threat-sims/02-imds-test.sh script.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: red-team
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: baseline
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: attacker
+  namespace: red-team
+  labels:
+    threat-sim: "scenario-2"
+spec:
+  containers:
+    - name: shell
+      image: amazon/aws-cli:2.17.18
+      command: ["sleep", "3600"]
+      env:
+        - name: AWS_REGION
+          value: us-east-1
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities: { drop: ["ALL"] }

@@ -1,0 +1,6 @@
+flask==3.0.3
+pyserial==3.5
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+requests==2.32.3
+gunicorn==23.0.0

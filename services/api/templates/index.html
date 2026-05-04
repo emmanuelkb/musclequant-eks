@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MuscleQuant AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#050810;--card:#0e1528;--border:#162040;
+  --cyan:#00f0ff;--cyan2:#0077ff;--green:#00ff88;
+  --red:#ff3355;--amber:#ffaa00;--purple:#a855f7;
+  --text:#ccdaf5;--muted:#3a5080;--white:#ffffff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 800px 600px at 20% 50%,rgba(0,119,255,0.05) 0%,transparent 70%),
+  radial-gradient(ellipse 600px 400px at 80% 20%,rgba(0,240,255,0.04) 0%,transparent 70%);}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,240,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.02) 1px,transparent 1px);
+  background-size:50px 50px;}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .8s;}
+#splash.fade{opacity:0;pointer-events:none;}
+.sp-logo{width:110px;height:110px;border-radius:24px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;font-size:52px;box-shadow:0 0 60px rgba(0,240,255,0.5);animation:spPulse 1.5s ease-in-out infinite;}
+@keyframes spPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.sp-title{font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;color:var(--white);letter-spacing:3px;}
+.sp-title em{color:var(--cyan);font-style:normal;}
+.sp-sub{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.sp-bar{width:200px;height:2px;background:var(--border);border-radius:2px;overflow:hidden;}
+.sp-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--green));}
+.sp-welcome{font-family:'Orbitron',sans-serif;font-size:15px;color:var(--cyan);letter-spacing:2px;opacity:0;transition:opacity .5s;}
+.sp-welcome.show{opacity:1;}
+
+/* ── HEADER ── */
+header{position:relative;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(5,8,16,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 16px rgba(0,240,255,0.4);}
+.logo-name{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:var(--white);}
+.logo-name em{color:var(--cyan);font-style:normal;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;}
+.hdr-mid{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:8px;background:rgba(0,240,255,0.03);border:1px solid var(--border);border-radius:20px;padding:4px 14px;}
+.pipe{color:var(--border);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.badge{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.badge.live{border-color:rgba(0,255,136,0.4);color:var(--green);background:rgba(0,255,136,0.05);}
+.badge.hw{border-color:rgba(0,240,255,0.3);color:var(--cyan);background:rgba(0,240,255,0.05);}
+.pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:p 1.4s infinite;}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-btn{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace;}
+.hdr-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.hdr-btn.danger:hover{border-color:var(--red);color:var(--red);}
+.user-chip{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:20px;cursor:pointer;position:relative;user-select:none;}
+.user-chip:hover{border-color:var(--cyan);color:var(--cyan);}
+.user-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:#0d1117;border:1px solid var(--border);border-radius:12px;padding:6px;min-width:180px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.user-dropdown.open{display:block;}
+.ud-header{padding:10px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.ud-name{font-size:12px;font-weight:700;color:white;font-family:'Orbitron',sans-serif;}
+.ud-email{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.ud-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;transition:background .15s,color .15s;}
+.ud-item:hover{background:rgba(255,255,255,.05);color:white;}
+.ud-item.red:hover{background:rgba(239,68,68,.1);color:var(--red);}
+
+/* ── APP ── */
+#app{position:relative;z-index:10;height:calc(100vh - 53px);}
+.screen{display:none;width:100%;height:100%;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ── BACK BTN ── */
+.back-btn{align-self:flex-start;margin:14px 0 0 20px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;letter-spacing:1px;}
+.back-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* ── IDLE ── */
+#s-idle{align-items:center;justify-content:center;gap:18px;text-align:center;padding:20px;position:relative;z-index:20;}
+.idle-orb{width:110px;height:110px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(0,240,255,0.2),rgba(0,119,255,0.1) 50%,transparent 70%);border:1px solid rgba(0,240,255,0.2);display:flex;align-items:center;justify-content:center;font-size:46px;animation:orbFloat 4s ease-in-out infinite;box-shadow:0 0 60px rgba(0,240,255,0.1);}
+@keyframes orbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.idle-title{font-family:'Orbitron',sans-serif;font-size:34px;font-weight:900;color:var(--white);letter-spacing:2px;}
+.idle-title em{color:var(--cyan);font-style:normal;}
+.idle-desc{font-size:14px;color:var(--muted);max-width:380px;line-height:1.7;}
+.feat-grid{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;max-width:540px;}
+.feat-chip{display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:rgba(14,21,40,0.8);font-size:12px;color:var(--muted);transition:all .25s;cursor:default;}
+.feat-chip:hover{border-color:rgba(0,240,255,0.3);color:var(--cyan);transform:translateY(-2px);}
+.start-btn{padding:14px 52px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--green),#00cc66);color:#050810;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .25s;box-shadow:0 0 30px rgba(0,255,136,0.3);}
+.start-btn:hover{transform:translateY(-3px);box-shadow:0 0 50px rgba(0,255,136,0.5);}
+
+/* ── MUSCLE PICKER ── */
+#s-pick{align-items:center;justify-content:center;gap:16px;padding:16px 20px;position:relative;z-index:20;}
+.pick-title{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;color:var(--white);letter-spacing:2px;text-align:center;}
+.pick-title em{color:var(--cyan);font-style:normal;}
+.pick-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;}
+.muscle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;max-width:520px;width:100%;}
+.muscle-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .25s;}
+.muscle-card:hover,.muscle-card.selected{border-color:var(--cyan);background:rgba(0,240,255,0.06);transform:translateY(-3px);box-shadow:0 0 18px rgba(0,240,255,0.15);}
+.mc-icon{width:52px;height:52px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;}
+.mc-icon svg{width:100%;height:100%;}
+.mc-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:var(--white);letter-spacing:1px;}
+.mc-desc{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px;}
+.goal-row{display:flex;align-items:center;gap:14px;}
+.goal-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;}
+.goal-input{width:80px;padding:8px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--white);font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;text-align:center;outline:none;transition:border-color .2s;}
+.goal-input:focus{border-color:var(--cyan);}
+.goal-hint{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.next-btn{padding:12px 44px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:var(--bg);font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .25s;box-shadow:0 0 18px rgba(0,240,255,0.3);}
+.next-btn:hover:not(:disabled){transform:translateY(-2px);}
+.next-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+/* ── COUNTDOWN ── */
+#s-countdown{align-items:center;justify-content:center;gap:14px;position:relative;z-index:20;}
+.cd-label{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.cd-num{font-family:'Orbitron',sans-serif;font-size:140px;font-weight:900;color:var(--white);line-height:1;text-shadow:0 0 60px rgba(0,240,255,0.5);animation:cdAnim .8s ease-in-out infinite;}
+.cd-num.go{color:var(--green);text-shadow:0 0 60px rgba(0,255,136,0.7);font-size:100px;animation:none;}
+@keyframes cdAnim{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.cd-sub{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted);letter-spacing:3px;}
+
+/* ── LIVE ── */
+#s-live{padding:11px 18px;gap:9px;overflow:hidden;}
+.topbar{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:9px;}
+.sess-info{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.sess-info strong{color:var(--text);}
+.muscle-tag{padding:4px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:10px;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);background:rgba(0,240,255,0.05);}
+.stop-btn{padding:8px 20px;border-radius:9px;background:rgba(255,51,85,0.08);border:1px solid rgba(255,51,85,0.4);color:var(--red);font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .2s;}
+.stop-btn:hover{background:var(--red);color:#fff;}
+.live-grid{display:grid;grid-template-columns:2.2fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:9px;flex:1;min-height:0;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 16px;position:relative;overflow:hidden;display:flex;flex-direction:column;transition:border-color .3s;}
+.card:hover{border-color:rgba(0,240,255,0.15);}
+.card-chart{grid-column:1;grid-row:1/3;}
+.chart-area{flex:1;min-height:0;position:relative;}
+.ctitle{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.ctitle-dot{width:4px;height:4px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+.big{font-family:'Orbitron',monospace;font-size:40px;font-weight:900;color:var(--white);line-height:1;margin:2px 0;}
+.big sub{font-family:'DM Mono',monospace;font-size:14px;color:var(--muted);}
+.lbl{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;margin-bottom:9px;}
+.track{height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.fill{height:100%;border-radius:3px;transition:width .3s,background .3s;}
+.mono-sm{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.fat-wrap{display:flex;align-items:center;gap:12px;flex:1;}
+.fat-right .lbl{margin-bottom:4px;}
+.fat-desc{font-size:10px;color:var(--muted);line-height:1.5;}
+.rep-giant{font-family:'Orbitron',sans-serif;font-size:54px;font-weight:900;color:var(--white);line-height:1;}
+.rep-giant.flash{animation:repFlash .3s ease;}
+@keyframes repFlash{0%{transform:scale(1.3);color:var(--green);text-shadow:0 0 40px rgba(0,255,136,0.9)}100%{transform:scale(1);}}
+.rep-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin:3px 0 7px;}
+.goal-track{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin-bottom:3px;}
+.goal-fill-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .3s;}
+.goal-txt{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);display:flex;justify-content:space-between;}
+.goal-done{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--green);letter-spacing:1px;display:none;margin-top:3px;}
+.wr-state{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;margin:2px 0 10px;transition:color .3s;}
+.wr-rows{display:flex;flex-direction:column;gap:7px;}
+.wr-row{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:10px;}
+.wr-lbl{width:34px;color:var(--muted);}
+.wr-t{flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}
+.wr-f{height:100%;border-radius:3px;transition:width .4s;}
+.wr-v{width:30px;text-align:right;color:var(--text);}
+.wr-badge{margin-top:7px;padding:4px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-align:center;transition:all .3s;}
+.heatmap-wrap{flex:1;display:flex;align-items:center;justify-content:center;gap:14px;}
+.body-svg{width:62px;}
+.heat-info{display:flex;flex-direction:column;gap:6px;}
+.heat-zone-lbl{font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:1px;text-align:center;transition:all .4s;}
+.heat-muscle-nm{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--white);letter-spacing:1px;}
+.card-csv{justify-content:space-between;}
+.csv-n{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700;color:var(--white);line-height:1;margin:2px 0;}
+.csv-n sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.csv-btns{display:flex;gap:7px;margin-top:8px;}
+.btn-dl{padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:var(--bg);border:none;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;}
+.btn-dl:hover{transform:translateY(-1px);}
+.btn-sm{padding:7px 12px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;}
+.btn-sm:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* ── ALERTS ── */
+#alert-fatigue{display:none;position:fixed;top:60px;right:20px;z-index:900;padding:9px 16px;border-radius:10px;border:1px solid rgba(255,51,85,0.5);background:rgba(255,51,85,0.1);backdrop-filter:blur(16px);color:var(--red);font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;}
+#goal-banner{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:901;padding:11px 26px;border-radius:12px;background:rgba(0,255,136,0.12);border:1px solid rgba(0,255,136,0.4);color:var(--green);font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;backdrop-filter:blur(16px);animation:bannerIn .4s ease;}
+@keyframes bannerIn{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+
+/* ── SUMMARY ── */
+#s-summary{align-items:center;justify-content:center;gap:18px;padding:20px;position:relative;z-index:20;}
+.sum-title{font-family:'Orbitron',sans-serif;font-size:26px;font-weight:900;color:var(--white);letter-spacing:2px;text-align:center;}
+.sum-title em{color:var(--green);font-style:normal;}
+.sum-muscle{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.sum-grid{display:grid;grid-template-columns:repeat(3,160px);gap:11px;}
+.sum-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:16px 12px;text-align:center;animation:cardUp .4s ease both;transition:border-color .3s,transform .2s;}
+.sum-card:hover{border-color:rgba(0,240,255,0.2);transform:translateY(-3px);}
+@keyframes cardUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.sum-card:nth-child(1){animation-delay:.05s}.sum-card:nth-child(2){animation-delay:.1s}.sum-card:nth-child(3){animation-delay:.15s}.sum-card:nth-child(4){animation-delay:.2s}.sum-card:nth-child(5){animation-delay:.25s}.sum-card:nth-child(6){animation-delay:.3s}
+.sum-icon{font-size:22px;margin-bottom:7px;}
+.sum-val{font-family:'Orbitron',sans-serif;font-size:26px;font-weight:700;color:var(--white);line-height:1;}
+.sum-val sub{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+.sum-val.sm{font-size:15px;padding-top:5px;}
+.sum-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:5px;}
+.sum-actions{display:flex;gap:11px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.new-btn{padding:11px 32px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--green),#00cc66);color:#050810;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .25s;box-shadow:0 0 18px rgba(0,255,136,0.3);}
+.new-btn:hover{transform:translateY(-2px);}
+.report-btn{padding:11px 22px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--purple),#7c3aed);color:white;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .25s;box-shadow:0 0 14px rgba(168,85,247,0.3);}
+.report-btn:hover{transform:translateY(-2px);box-shadow:0 0 28px rgba(168,85,247,0.5);}
+
+/* ── AI REPORT MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:800;background:rgba(5,8,16,0.92);backdrop-filter:blur(16px);align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 30px;width:480px;max-width:95vw;position:relative;box-shadow:0 0 60px rgba(168,85,247,0.1);}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;transition:color .2s;}
+.modal-close:hover{color:var(--white);}
+.modal-title{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:var(--white);letter-spacing:2px;margin-bottom:4px;}
+.modal-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;}
+.modal-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.modal-tab{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.modal-tab.active{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,0.08);}
+.modal-section{display:none;}.modal-section.active{display:block;}
+.modal-info-box{background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:4px;}
+.file-drop{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:8px;}
+.file-drop:hover,.file-drop.drag-over{border-color:var(--purple);background:rgba(168,85,247,0.05);}
+.file-drop-icon{font-size:26px;margin-bottom:5px;}
+.file-drop-text{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.file-name-display{font-family:'DM Mono',monospace;font-size:11px;color:var(--green);margin-top:6px;}
+.modal-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin:12px 0 6px;}
+.modal-input{width:100%;padding:11px 14px;border-radius:9px;background:rgba(0,0,0,0.3);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;}
+.modal-input:focus{border-color:var(--purple);}
+.modal-hint{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px;}
+.modal-btns{display:flex;gap:9px;margin-top:14px;}
+.modal-gen-btn{flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--purple),#7c3aed);color:white;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .2s;}
+.modal-gen-btn:hover{transform:translateY(-1px);box-shadow:0 0 20px rgba(168,85,247,0.4);}
+.modal-cancel-btn{padding:12px 18px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.modal-cancel-btn:hover{border-color:var(--red);color:var(--red);}
+.delivery-opt{flex:1;padding:12px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;text-align:center;transition:all .2s;font-family:'DM Mono',monospace;}
+.delivery-opt:hover{border-color:var(--cyan);color:var(--cyan);}
+.delivery-opt.active{border-color:var(--purple);background:rgba(168,85,247,.08);color:var(--purple);}
+.modal-generating{display:none;text-align:center;padding:24px 0;}
+.modal-spin{display:inline-block;animation:spin 1s linear infinite;margin-right:8px;font-size:18px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.modal-gen-text{font-family:'DM Mono',monospace;font-size:12px;color:var(--purple);margin-bottom:6px;}
+.modal-gen-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-logo">&#128170;</div>
+  <div class="sp-title">Muscle<em>Quant</em> AI</div>
+  <div class="sp-sub">Surface EMG Monitoring System</div>
+  <div class="sp-bar"><div class="sp-fill" id="sp-fill"></div></div>
+  <div class="sp-welcome" id="sp-welcome">Welcome, Athlete &#128075;</div>
+</div>
+
+<!-- GOAL BANNER / FATIGUE ALERT -->
+<div id="goal-banner">&#127942; GOAL ACHIEVED!</div>
+<div id="alert-fatigue">&#9888; FATIGUE DETECTED</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">&#128170;</div>
+    <div>
+      <div class="logo-name">Muscle<em>Quant</em> AI</div>
+      <div class="logo-sub">SURFACE EMG MONITORING</div>
+    </div>
+  </div>
+  <div class="hdr-mid">
+    <span>MyoWare 2.0</span><span class="pipe">|</span>
+    <span>ESP32</span><span class="pipe">|</span>
+    <span id="hdr-clock">--:--:--</span>
+  </div>
+  <div class="hdr-right">
+    <div class="badge hw" id="hw-badge"><div class="pulse"></div><span id="hw-label">CHECKING</span></div>
+    <div class="badge" id="status-badge"><div class="pulse"></div>READY</div>
+    <div class="user-chip" id="user-chip" onclick="toggleUserMenu()">
+      &#128100; <span id="user-chip-label"></span> &#9660;
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="ud-header">
+          <div class="ud-name" id="ud-name">—</div>
+          <div class="ud-email" id="ud-email">—</div>
+        </div>
+        <div class="ud-item" onclick="event.stopPropagation();window.location.href='/logout'">
+          &#x23FB;&nbsp; Sign Out
+        </div>
+      </div>
+    </div>
+    <button class="hdr-btn" onclick="toggleFS()" title="Fullscreen">&#x26F6;</button>
+  </div>
+</header>
+
+<div id="app">
+
+<!-- IDLE -->
+<div class="screen active" id="s-idle">
+  <div class="idle-orb">&#128170;</div>
+  <div class="idle-title">Muscle<em>Quant</em> AI</div>
+  <div class="idle-desc">AI-powered surface EMG monitoring system. Attach your MyoWare sensor and press Start.</div>
+  <div class="feat-grid">
+    <div class="feat-chip">&#128200; Live EMG Graph</div>
+    <div class="feat-chip">&#9889; Intensity Level</div>
+    <div class="feat-chip">&#128531; Fatigue Detection</div>
+    <div class="feat-chip">&#128260; Rep Counter</div>
+    <div class="feat-chip">&#9878;&#65039; Work / Rest Ratio</div>
+    <div class="feat-chip">&#128293; Muscle Heatmap</div>
+    <div class="feat-chip">&#127919; Session Goals</div>
+    <div class="feat-chip">&#128196; AI PDF Report</div>
+  </div>
+  <button class="start-btn" onclick="show('s-pick')">&#9654; START SESSION</button>
+</div>
+
+<!-- MUSCLE PICKER -->
+<div class="screen" id="s-pick">
+  <button class="back-btn" onclick="show('s-idle')">&#8592; BACK</button>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:10px 20px 20px;">
+    <div class="pick-title">Select <em>Muscle</em> &amp; Goal</div>
+    <div class="pick-sub">WHERE ARE YOU PLACING THE SENSOR TODAY?</div>
+    <div class="muscle-grid">
+
+      <!-- BICEP -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Bicep','💪','Upper Arm')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 34c-2-4-3-8-2-12 1-5 4-9 8-11l4-1c3 0 6 1 8 4 2 3 2 7 0 10l-2 4c-1 2-1 4 0 6H14z" fill="rgba(0,240,255,0.15)" stroke="#00f0ff" stroke-width="1.5"/>
+            <path d="M20 22c0-3 2-6 4-7" stroke="#00f0ff" stroke-width="2" stroke-linecap="round"/>
+            <ellipse cx="26" cy="18" rx="5" ry="7" fill="rgba(0,240,255,0.25)" stroke="#00f0ff" stroke-width="1.5"/>
+            <path d="M12 36h24" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M14 38h20" stroke="rgba(0,240,255,0.4)" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="mc-name">BICEP</div><div class="mc-desc">Upper Arm</div>
+      </div>
+
+      <!-- TRICEP -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Tricep','💪','Back of Arm')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 12c2-1 5-2 8-2s6 1 8 3l2 4c1 3 1 7-1 10l-2 5c-1 2-2 4-2 6H18c0-2-1-4-2-6l-2-5c-2-4-1-9 2-15z" fill="rgba(168,85,247,0.15)" stroke="#a855f7" stroke-width="1.5"/>
+            <path d="M18 14c1 3 1 6 0 9" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 14c1 3 1 6 0 9" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M30 14c-1 3-1 6 0 9" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M14 38h20" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="mc-name">TRICEP</div><div class="mc-desc">Back of Arm</div>
+      </div>
+
+      <!-- FOREARM -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Forearm','🦾','Lower Arm')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 8l-4 20c-1 4 0 8 2 10h12c2-2 3-6 2-10L26 8H18z" fill="rgba(0,255,136,0.15)" stroke="#00ff88" stroke-width="1.5"/>
+            <path d="M20 10l-3 18" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 10l-2 18" stroke="#00ff88" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M27 12l-1 16" stroke="rgba(0,255,136,0.5)" stroke-width="1" stroke-linecap="round"/>
+            <rect x="14" y="37" width="20" height="4" rx="2" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="mc-name">FOREARM</div><div class="mc-desc">Lower Arm / Wrist</div>
+      </div>
+
+      <!-- SHOULDER -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Shoulder','🏋️','Deltoid')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="24" cy="20" rx="14" ry="10" fill="rgba(255,170,0,0.15)" stroke="#ffaa00" stroke-width="1.5"/>
+            <path d="M10 20c0 6 6 14 14 14s14-8 14-14" fill="rgba(255,170,0,0.1)" stroke="#ffaa00" stroke-width="1.5"/>
+            <path d="M24 10v8" stroke="#ffaa00" stroke-width="2" stroke-linecap="round"/>
+            <path d="M14 16l4 6" stroke="#ffaa00" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M34 16l-4 6" stroke="#ffaa00" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="24" cy="20" r="3" fill="#ffaa00" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="mc-name">SHOULDER</div><div class="mc-desc">Deltoid</div>
+      </div>
+
+      <!-- CHEST -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Chest','🫀','Pectoral')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 16c0-4 3-7 8-7h8v18c0 3-2 6-5 8l-3 2c-5-3-8-8-8-13V16z" fill="rgba(0,240,255,0.12)" stroke="#00f0ff" stroke-width="1.5"/>
+            <path d="M40 16c0-4-3-7-8-7h-8v18c0 3 2 6 5 8l3 2c5-3 8-8 8-13V16z" fill="rgba(0,240,255,0.12)" stroke="#00f0ff" stroke-width="1.5"/>
+            <path d="M16 14c2 1 5 2 8 2s6-1 8-2" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 9v28" stroke="rgba(0,240,255,0.3)" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="mc-name">CHEST</div><div class="mc-desc">Pectoral</div>
+      </div>
+
+      <!-- BACK -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Back','🔙','Latissimus Dorsi')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 10c4-2 9-3 14-3s10 1 14 3l3 8c1 4 0 9-3 13-2 3-5 5-8 6h-12c-3-1-6-3-8-6-3-4-4-9-3-13l3-8z" fill="rgba(255,51,85,0.12)" stroke="#ff3355" stroke-width="1.5"/>
+            <path d="M14 18c2 3 5 5 10 5s8-2 10-5" stroke="#ff3355" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M12 26c3 4 7 7 12 7s9-3 12-7" stroke="#ff3355" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M24 7v30" stroke="rgba(255,51,85,0.3)" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="mc-name">BACK</div><div class="mc-desc">Latissimus Dorsi</div>
+      </div>
+
+      <!-- QUAD -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Quad','🦵','Upper Leg')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 6c-2 8-3 16-2 24 1 5 4 10 8 12h4c4-2 7-7 8-12 1-8 0-16-2-24H16z" fill="rgba(0,240,255,0.12)" stroke="#00f0ff" stroke-width="1.5"/>
+            <path d="M18 8c-1 6-1 12 0 18" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 7c0 7 0 13-1 19" stroke="#00f0ff" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M30 8c1 6 1 12 0 18" stroke="rgba(0,240,255,0.5)" stroke-width="1" stroke-linecap="round"/>
+            <ellipse cx="24" cy="41" rx="8" ry="3" fill="rgba(0,240,255,0.15)" stroke="#00f0ff" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="mc-name">QUAD</div><div class="mc-desc">Upper Leg</div>
+      </div>
+
+      <!-- GLUTES -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Glutes','🍑','Gluteus Maximus')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 18c0-6 4-11 10-12l8-1 8 1c6 1 10 6 10 12 0 8-4 16-10 20H16C10 34 6 26 6 18z" fill="rgba(168,85,247,0.15)" stroke="#a855f7" stroke-width="1.5"/>
+            <path d="M14 14c2 5 3 11 3 16" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M34 14c-2 5-3 11-3 16" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 6v32" stroke="rgba(168,85,247,0.3)" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="mc-name">GLUTES</div><div class="mc-desc">Gluteus Maximus</div>
+      </div>
+
+      <!-- CALF -->
+      <div class="muscle-card" onclick="selectMuscle(this,'Calf','🦵','Lower Leg')">
+        <div class="mc-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 6c-1 5-2 10-1 16 1 7 4 14 6 18h4c2-4 5-11 6-18 1-6 0-11-1-16H17z" fill="rgba(0,255,136,0.12)" stroke="#00ff88" stroke-width="1.5"/>
+            <ellipse cx="24" cy="18" rx="6" ry="8" fill="rgba(0,255,136,0.18)" stroke="#00ff88" stroke-width="1.2"/>
+            <path d="M24 26v12" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round"/>
+            <ellipse cx="24" cy="41" rx="7" ry="3" fill="rgba(0,255,136,0.15)" stroke="#00ff88" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="mc-name">CALF</div><div class="mc-desc">Lower Leg</div>
+      </div>
+
+    </div>
+    <div class="goal-row">
+      <div class="goal-label">REP GOAL</div>
+      <input class="goal-input" type="number" id="goal-input" value="10" min="1" max="999"/>
+      <div class="goal-hint">Target reps for this session</div>
+    </div>
+    <button class="next-btn" id="next-btn" onclick="startCountdown()" disabled>SELECT A MUSCLE TO CONTINUE</button>
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="screen" id="s-countdown">
+  <div class="cd-label" id="cd-label">BICEP &middot; UPPER ARM</div>
+  <div class="cd-num" id="cd-num">3</div>
+  <div class="cd-sub" id="cd-sub">GET READY...</div>
+</div>
+
+<!-- LIVE -->
+<div class="screen" id="s-live">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="badge live"><div class="pulse"></div>RECORDING</div>
+      <div class="muscle-tag" id="live-muscle-tag">&#128170; BICEP</div>
+      <div class="sess-info">Session: <strong id="sess-t">00:00</strong></div>
+    </div>
+    <button class="stop-btn" onclick="stopSession()">&#9632; STOP &amp; SUMMARY</button>
+  </div>
+  <div class="live-grid">
+
+    <!-- CHART -->
+    <div class="card card-chart">
+      <div class="ctitle"><div class="ctitle-dot"></div>Live EMG Signal &middot; dashed = activation threshold</div>
+      <div class="chart-area"><canvas id="emgC"></canvas></div>
+    </div>
+
+    <!-- INTENSITY -->
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-dot"></div>Intensity Level</div>
+      <div class="big" id="i-pct">0<sub>%</sub></div>
+      <div class="lbl" id="i-lbl" style="color:var(--cyan)">REST</div>
+      <div class="track"><div class="fill" id="i-bar" style="width:0%;background:var(--cyan)"></div></div>
+      <div class="mono-sm">ADC <span id="adc-val">0</span> &middot; <span id="mv-val" style="color:var(--cyan)">0.000000</span> mV</div>
+    </div>
+
+    <!-- FATIGUE -->
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-dot"></div>Fatigue Detection</div>
+      <div class="fat-wrap">
+        <svg width="76" height="76" viewBox="0 0 76 76" style="flex-shrink:0">
+          <circle cx="38" cy="38" r="29" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="7"/>
+          <circle id="fat-arc" cx="38" cy="38" r="29" fill="none" stroke="var(--green)" stroke-width="7"
+            stroke-dasharray="182" stroke-dashoffset="182" stroke-linecap="round"
+            transform="rotate(-90 38 38)" style="transition:stroke-dashoffset .5s,stroke .5s"/>
+          <text x="38" y="43" text-anchor="middle" font-family="DM Mono" font-size="11" fill="white" id="fat-txt">0%</text>
+        </svg>
+        <div class="fat-right">
+          <div class="lbl" id="fat-lbl" style="color:var(--green)">NORMAL</div>
+          <div class="fat-desc">Amplitude trend analysis</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPS + GOAL -->
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-dot"></div>Rep Counter</div>
+      <div class="rep-giant" id="rep-n">0</div>
+      <div class="rep-lbl">REPS THIS SESSION</div>
+      <div class="goal-track"><div class="goal-fill-bar" id="goal-fill" style="width:0%"></div></div>
+      <div class="goal-txt"><span>0 reps</span><span id="goal-lbl">/ 10 goal</span></div>
+      <div class="goal-done" id="goal-done">&#127942; GOAL REACHED!</div>
+    </div>
+
+    <!-- HEATMAP -->
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-dot"></div>Muscle Heatmap</div>
+      <div class="heatmap-wrap">
+        <svg class="body-svg" viewBox="0 0 60 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="9" r="8" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect x="17" y="20" width="26" height="32" rx="5" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect id="h-chest"    x="19" y="22" width="22" height="14" rx="3" fill="#1a2540" style="transition:fill .5s"/>
+          <rect id="h-shoulder" x="7"  y="20" width="10" height="13" rx="4" fill="#1a2540" stroke="#1e2d50" stroke-width="1" style="transition:fill .5s"/>
+          <rect                  x="43" y="20" width="10" height="13" rx="4" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect id="h-bicep"    x="5"  y="34" width="9"  height="16" rx="4" fill="#1a2540" stroke="#1e2d50" stroke-width="1" style="transition:fill .5s"/>
+          <rect                  x="46" y="34" width="9"  height="16" rx="4" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect id="h-forearm"  x="6"  y="52" width="8"  height="14" rx="3" fill="#1a2540" stroke="#1e2d50" stroke-width="1" style="transition:fill .5s"/>
+          <rect                  x="46" y="52" width="8"  height="14" rx="3" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect x="18" y="54" width="10" height="28" rx="5" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect x="32" y="54" width="10" height="28" rx="5" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect id="h-quad"  x="18" y="54" width="10" height="28" rx="5" fill="#1a2540" style="transition:fill .5s"/>
+          <rect id="h-quad2" x="32" y="54" width="10" height="28" rx="5" fill="#1a2540" style="transition:fill .5s"/>
+          <rect x="19" y="84" width="9" height="20" rx="4" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect x="32" y="84" width="9" height="20" rx="4" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect id="h-calf"  x="19" y="84" width="9" height="20" rx="4" fill="#1a2540" style="transition:fill .5s"/>
+          <rect id="h-calf2" x="32" y="84" width="9" height="20" rx="4" fill="#1a2540" style="transition:fill .5s"/>
+          <rect x="18" y="105" width="11" height="6" rx="3" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+          <rect x="31" y="105" width="11" height="6" rx="3" fill="#1a2540" stroke="#1e2d50" stroke-width="1"/>
+        </svg>
+        <div class="heat-info">
+          <div class="heat-muscle-nm" id="heat-nm">BICEP</div>
+          <div class="heat-zone-lbl" id="hz-lbl" style="background:rgba(58,80,128,0.1);color:var(--muted);border:1px solid var(--border)">REST</div>
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);margin-top:3px" id="hz-pct">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORK / REST -->
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-dot"></div>Work / Rest Ratio</div>
+      <div class="wr-state" id="wr-s" style="color:var(--muted)">RESTING</div>
+      <div class="wr-rows">
+        <div class="wr-row">
+          <div class="wr-lbl">WORK</div>
+          <div class="wr-t"><div class="wr-f" id="wr-wb" style="width:0%;background:var(--cyan)"></div></div>
+          <div class="wr-v" id="wr-wv">0%</div>
+        </div>
+        <div class="wr-row">
+          <div class="wr-lbl">REST</div>
+          <div class="wr-t"><div class="wr-f" id="wr-rb" style="width:100%;background:var(--muted)"></div></div>
+          <div class="wr-v" id="wr-rv">100%</div>
+        </div>
+      </div>
+      <div class="wr-badge" id="wr-bdg" style="background:rgba(0,255,136,.07);color:var(--green);border:1px solid rgba(0,255,136,.15)">GOOD BALANCE</div>
+    </div>
+
+    <!-- CSV / EXPORT -->
+    <div class="card card-csv">
+      <div>
+        <div class="ctitle"><div class="ctitle-dot"></div>Data Export</div>
+        <div class="csv-n" id="csv-n">0<sub> readings</sub></div>
+        <div class="mono-sm" style="margin-top:3px">Auto-timestamped session</div>
+      </div>
+      <div class="csv-btns">
+        <a href="/api/download_csv" class="btn-dl">&#11015; CSV</a>
+        <button class="btn-sm" onclick="resetSession()">RESET</button>
+      </div>
+    </div>
+
+  </div><!-- live-grid -->
+</div><!-- s-live -->
+
+<!-- SUMMARY -->
+<div class="screen" id="s-summary">
+  <button class="back-btn" onclick="newSession()">&#8592; NEW SESSION</button>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:10px 20px 20px;">
+    <div class="sum-title">Session <em>Complete</em></div>
+    <div class="sum-muscle" id="sum-muscle">&#128170; BICEP &middot; UPPER ARM</div>
+    <div class="sum-grid">
+      <div class="sum-card"><div class="sum-icon">&#128260;</div><div class="sum-val" id="sv-reps">0</div><div class="sum-lbl">TOTAL REPS</div></div>
+      <div class="sum-card"><div class="sum-icon">&#9889;</div><div class="sum-val" id="sv-peak">0<sub>%</sub></div><div class="sum-lbl">PEAK INTENSITY</div></div>
+      <div class="sum-card"><div class="sum-icon">&#128531;</div><div class="sum-val sm" id="sv-fat">NORMAL</div><div class="sum-lbl">FATIGUE STATUS</div></div>
+      <div class="sum-card"><div class="sum-icon">&#9878;&#65039;</div><div class="sum-val" id="sv-work">0<sub>%</sub></div><div class="sum-lbl">TIME WORKING</div></div>
+      <div class="sum-card"><div class="sum-icon">&#9201;</div><div class="sum-val sm" id="sv-dur">00:00</div><div class="sum-lbl">DURATION</div></div>
+      <div class="sum-card"><div class="sum-icon">&#128202;</div><div class="sum-val" id="sv-avg">0<sub>%</sub></div><div class="sum-lbl">AVG INTENSITY</div></div>
+    </div>
+    <div class="sum-actions">
+      <a href="/api/download_csv" class="btn-dl" style="padding:11px 22px;border-radius:12px;font-size:12px;">&#11015; DOWNLOAD CSV</a>
+      <button class="report-btn" onclick="openReportModal()">&#129302; AI REPORT PDF</button>
+      <button class="new-btn" onclick="newSession()">&#9654; NEW SESSION</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- AI REPORT MODAL -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeReportModal()">&#10005;</button>
+    <div id="modal-form">
+      <div class="modal-title">&#129302; SESSION REPORT</div>
+      <div class="modal-sub">Choose your data source and delivery method.</div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tab-live" onclick="switchTab('live')">&#128202; LIVE SESSION</button>
+        <button class="modal-tab" id="tab-csv" onclick="switchTab('csv')">&#128193; UPLOAD CSV</button>
+      </div>
+      <div class="modal-section active" id="sec-live">
+        <div class="modal-info-box">&#9989; Using your current session data<br>Reps &middot; Peak Intensity &middot; Fatigue &middot; Work/Rest &middot; Duration</div>
+      </div>
+      <div class="modal-section" id="sec-csv">
+        <div class="file-drop" id="file-drop" onclick="document.getElementById('csv-file-input').click()">
+          <div class="file-drop-icon">&#128193;</div>
+          <div class="file-drop-text">Click to select CSV file<br><span style="font-size:9px;opacity:.6">or drag and drop</span></div>
+          <div class="file-name-display" id="file-name-display"></div>
+        </div>
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="onFileSelect(this)"/>
+      </div>
+
+      <!-- DELIVERY OPTIONS -->
+      <div class="modal-lbl" style="margin-top:14px">DELIVERY METHOD</div>
+      <div style="display:flex;gap:10px;margin-bottom:4px;">
+        <div class="delivery-opt active" id="del-pdf" onclick="setDelivery('pdf')">
+          <div style="font-size:18px">&#128438;</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;margin-top:4px">DOWNLOAD PDF</div>
+        </div>
+        <div class="delivery-opt" id="del-email" onclick="setDelivery('email')">
+          <div style="font-size:18px">&#128140;</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;margin-top:4px">SEND TO EMAIL</div>
+          <div id="del-email-addr" style="font-size:9px;opacity:.6;margin-top:2px"></div>
+        </div>
+      </div>
+
+      <div class="modal-btns">
+        <button class="modal-gen-btn" onclick="submitReport()">&#129302; GENERATE REPORT</button>
+        <button class="modal-cancel-btn" onclick="closeReportModal()">CANCEL</button>
+      </div>
+    </div>
+    <div class="modal-generating" id="modal-generating">
+      <div class="modal-gen-text"><span class="modal-spin">&#9881;</span><span id="modal-gen-msg">Generating your report...</span></div>
+      <div class="modal-gen-sub" id="modal-gen-sub">This takes just a moment</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Audio ──
+var _audioCtx = null;
+function _ctx(){ if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return _audioCtx; }
+function beep(freq,dur,type,vol){
+  try{ var c=_ctx(),o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);o.type=type||'sine';o.frequency.value=freq||880;
+    g.gain.setValueAtTime(vol||0.3,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+    o.start(c.currentTime);o.stop(c.currentTime+dur); }catch(e){}
+}
+function sndRep(){  beep(1046,.12,'sine',.3); }
+function sndCount(){ beep(660,.15,'sine',.3); }
+function sndGo(){   beep(880,.1,'sine',.4);setTimeout(function(){beep(1108,.1,'sine',.4);},110);setTimeout(function(){beep(1318,.25,'sine',.5);},220); }
+function sndFat(){  beep(330,.4,'sawtooth',.2);setTimeout(function(){beep(277,.4,'sawtooth',.15);},200); }
+function sndGoal(){ beep(784,.1,'sine',.4);setTimeout(function(){beep(988,.1,'sine',.4);},100);setTimeout(function(){beep(1175,.3,'sine',.5);},200); }
+
+// ── Chart ──
+var MAXPTS=200, THRESH=1200;
+var chart = new Chart(document.getElementById('emgC').getContext('2d'),{
+  type:'line',
+  data:{labels:Array(MAXPTS).fill(''),datasets:[
+    {label:'EMG',data:Array(MAXPTS).fill(0),borderColor:'#00f0ff',backgroundColor:'rgba(0,240,255,0.06)',borderWidth:1.5,pointRadius:0,fill:true,tension:0.35},
+    {label:'Threshold',data:Array(MAXPTS).fill(THRESH),borderColor:'rgba(255,51,85,0.45)',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{labels:{color:'#3a5080',font:{family:'DM Mono',size:10}}}},
+    scales:{x:{display:false},y:{min:0,max:4095,grid:{color:'rgba(22,32,64,0.8)'},
+      ticks:{color:'#3a5080',font:{family:'DM Mono',size:9},maxTicksLimit:5}}}}
+});
+
+// ── State ──
+var running=false, pollIv=null, timerIv=null, t0=0;
+var samples=0, totalPct=0, peakPct=0, lastFat='Normal', lastWork=0, repsCnt=0;
+var goalReached=false, lastFatState='Normal';
+var selMuscle='Bicep', selIcon='&#128170;', selDesc='Upper Arm', repGoal=10;
+
+function resetState(){
+  samples=0;totalPct=0;peakPct=0;lastFat='Normal';lastWork=0;repsCnt=0;goalReached=false;lastFatState='Normal';
+  chart.data.datasets[0].data=Array(MAXPTS).fill(0);chart.update('none');
+  document.getElementById('goal-done').style.display='none';
+  document.getElementById('goal-fill').style.width='0%';
+  document.getElementById('rep-n').textContent='0';
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');s.style.display='none';});
+  var el=document.getElementById(id);el.style.display='flex';el.classList.add('active');
+}
+
+// ── Muscle select ──
+function selectMuscle(card,name,icon,desc){
+  document.querySelectorAll('.muscle-card').forEach(function(c){c.classList.remove('selected');});
+  card.classList.add('selected');
+  selMuscle=name;selIcon=icon;selDesc=desc;
+  var btn=document.getElementById('next-btn');
+  btn.disabled=false;
+  btn.textContent='START WITH '+name.toUpperCase()+' \u2192';
+  beep(660,.08,'sine',.2);
+}
+
+// ── Countdown ──
+function startCountdown(){
+  repGoal=parseInt(document.getElementById('goal-input').value)||10;
+  document.getElementById('cd-label').textContent=selMuscle.toUpperCase()+' \u00B7 '+selDesc.toUpperCase();
+  document.getElementById('cd-num').textContent='3';
+  document.getElementById('cd-num').classList.remove('go');
+  document.getElementById('cd-sub').textContent='GET READY...';
+  show('s-countdown');
+  sndCount();
+  var n=3;
+  var iv=setInterval(function(){
+    n--;
+    if(n>0){ document.getElementById('cd-num').textContent=String(n); sndCount(); }
+    else{
+      clearInterval(iv);
+      document.getElementById('cd-num').textContent='GO!';
+      document.getElementById('cd-num').classList.add('go');
+      document.getElementById('cd-sub').textContent='';
+      sndGo();
+      setTimeout(startSession,700);
+    }
+  },1000);
+}
+
+// ── Start ──
+function startSession(){
+  // Always kill any old intervals before starting fresh
+  running = false;
+  if(pollIv)  { clearInterval(pollIv);  pollIv  = null; }
+  if(timerIv) { clearInterval(timerIv); timerIv = null; }
+  resetState();t0=Date.now();running=true;
+  document.getElementById('live-muscle-tag').textContent=selIcon+' '+selMuscle.toUpperCase();
+  document.getElementById('goal-lbl').textContent='/ '+repGoal+' goal';
+  document.getElementById('heat-nm').textContent=selMuscle.toUpperCase();
+  var sb=document.getElementById('status-badge');sb.className='badge live';sb.innerHTML='<div class="pulse"></div>RECORDING';
+  updateHeatmap(0);
+  show('s-live');
+  timerIv=setInterval(function(){
+    var s=Math.floor((Date.now()-t0)/1000);
+    document.getElementById('sess-t').textContent=pad(Math.floor(s/60))+':'+pad(s%60);
+  },1000);
+  pollIv=setInterval(fetchData,100);
+  fetchData();
+}
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+// ── Stop ──
+function stopSession(){
+  // Kill everything immediately
+  running = false;
+  if(pollIv)  { clearInterval(pollIv);  pollIv  = null; }
+  if(timerIv) { clearInterval(timerIv); timerIv = null; }
+
+  // Snapshot values right now before any state changes
+  var dur     = Math.floor((Date.now() - t0) / 1000);
+  var snapReps= repsCnt;
+  var snapPeak= peakPct;
+  var snapFat = lastFat;
+  var snapWork= lastWork;
+  var snapAvg = samples > 0 ? Math.round(totalPct / samples) : 0;
+  var snapDur = pad(Math.floor(dur/60)) + ':' + pad(dur%60);
+
+  // Update header badge
+  var sb = document.getElementById('status-badge');
+  sb.className = 'badge';
+  sb.innerHTML = '<div class="pulse"></div>IDLE';
+
+  // Populate summary cards
+  document.getElementById('sv-reps').textContent           = snapReps;
+  document.getElementById('sv-peak').innerHTML             = snapPeak + '<sub>%</sub>';
+  document.getElementById('sv-fat').textContent            = snapFat.toUpperCase();
+  document.getElementById('sv-work').innerHTML             = snapWork + '<sub>%</sub>';
+  document.getElementById('sv-dur').textContent            = snapDur;
+  document.getElementById('sv-avg').innerHTML              = snapAvg + '<sub>%</sub>';
+  document.getElementById('sum-muscle').textContent        = selIcon + ' ' + selMuscle.toUpperCase() + ' \u00B7 ' + selDesc.toUpperCase();
+
+  // Save session silently
+  try {
+    fetch('/api/save_session', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({muscle:selMuscle, reps:snapReps, peak_pct:snapPeak,
+        avg_pct:snapAvg, fatigue:snapFat, work_pct:snapWork,
+        duration:snapDur, readings:samples})
+    });
+  } catch(e) {}
+
+  // Go to summary screen
+  show('s-summary');
+}
+
+function newSession(){ fetch('/api/clear');resetState();show('s-idle'); }
+function resetSession(){ fetch('/api/clear');resetState();t0=Date.now(); }
+function toggleFS(){ if(!document.fullscreenElement)document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+
+// ── Heatmap ──
+function updateHeatmap(pct){
+  var map={Bicep:['h-bicep'],Tricep:['h-bicep'],Forearm:['h-forearm'],Shoulder:['h-shoulder'],Chest:['h-chest'],Back:['h-shoulder'],Quad:['h-quad','h-quad2'],Glutes:['h-quad','h-quad2'],Calf:['h-calf','h-calf2']};
+  var ids=map[selMuscle]||['h-bicep'];
+  var i=pct/100,r,g,b;
+  if(i<0.3){r=26;g=37;b=64;}
+  else if(i<0.6){r=0;g=Math.round(i*200);b=Math.round(255*(1-i));}
+  else{r=Math.min(255,Math.round((i-0.6)*637));g=Math.round(255*(1-i+0.4));b=0;}
+  var col='rgb('+r+','+g+','+b+')';
+  ['h-bicep','h-forearm','h-shoulder','h-chest','h-quad','h-quad2','h-calf','h-calf2'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.fill='#1a2540';
+  });
+  ids.forEach(function(id){var el=document.getElementById(id);if(el)el.style.fill=col;});
+  document.getElementById('hz-pct').textContent=pct+'%';
+  var lbl=document.getElementById('hz-lbl');
+  if(pct>70){lbl.style.cssText='background:rgba(255,51,85,0.15);color:var(--red);border:1px solid rgba(255,51,85,0.3);';lbl.textContent='HIGH';}
+  else if(pct>40){lbl.style.cssText='background:rgba(255,170,0,0.12);color:var(--amber);border:1px solid rgba(255,170,0,0.3);';lbl.textContent='ACTIVE';}
+  else if(pct>15){lbl.style.cssText='background:rgba(0,240,255,0.1);color:var(--cyan);border:1px solid rgba(0,240,255,0.3);';lbl.textContent='LOW';}
+  else{lbl.style.cssText='background:rgba(58,80,128,0.1);color:var(--muted);border:1px solid var(--border);';lbl.textContent='REST';}
+}
+
+function iColor(p){ return p<25?'var(--cyan)':p<50?'var(--green)':p<75?'var(--amber)':'var(--red)'; }
+function fColor(s){ return s==='Normal'||s==='Insufficient Data'?'var(--green)':s==='Mild Fatigue'?'var(--amber)':'var(--red)'; }
+
+// ── Fetch data ──
+async function fetchData(){
+  if(!running) return;
+  try{
+    var res=await fetch('/api/data');
+    if(!running) return; // session was stopped while fetch was in-flight
+    var d=await res.json();
+    if(!running) return; // stopped while parsing
+    document.getElementById('hdr-clock').textContent=d.timestamp;
+    chart.data.datasets[0].data=d.history;chart.update('none');
+
+    var ic=iColor(d.intensity_pct);
+    document.getElementById('i-pct').innerHTML=d.intensity_pct+'<sub>%</sub>';
+    document.getElementById('i-lbl').textContent=d.intensity_label.toUpperCase();
+    document.getElementById('i-lbl').style.color=ic;
+    document.getElementById('i-bar').style.width=d.intensity_pct+'%';
+    document.getElementById('i-bar').style.background=ic;
+    document.getElementById('adc-val').textContent=d.emg;
+    document.getElementById('mv-val').textContent=d.raw_mv||'0.000000';
+    updateHeatmap(d.intensity_pct);
+
+    var fc=fColor(d.fatigue_status);
+    document.getElementById('fat-arc').style.strokeDashoffset=182-(d.fatigue_pct/100)*182;
+    document.getElementById('fat-arc').style.stroke=fc;
+    document.getElementById('fat-txt').textContent=d.fatigue_pct+'%';
+    document.getElementById('fat-lbl').textContent=d.fatigue_status.toUpperCase();
+    document.getElementById('fat-lbl').style.color=fc;
+    if(d.fatigue_status==='Fatigued'&&lastFatState!=='Fatigued'){
+      document.getElementById('alert-fatigue').style.display='block';sndFat();
+    } else if(d.fatigue_status!=='Fatigued'){
+      document.getElementById('alert-fatigue').style.display='none';
+    }
+    lastFatState=d.fatigue_status;
+
+    var rEl=document.getElementById('rep-n');
+    if(parseInt(rEl.textContent)!==d.reps){
+      rEl.textContent=d.reps;rEl.classList.remove('flash');void rEl.offsetWidth;rEl.classList.add('flash');
+      sndRep();
+      if(d.reps>=repGoal&&!goalReached){
+        goalReached=true;
+        document.getElementById('goal-done').style.display='block';
+        document.getElementById('goal-banner').style.display='block';
+        sndGoal();
+        setTimeout(function(){document.getElementById('goal-banner').style.display='none';},3000);
+      }
+    }
+    repsCnt=d.reps;
+    document.getElementById('goal-fill').style.width=Math.min(100,Math.round((d.reps/repGoal)*100))+'%';
+
+    document.getElementById('wr-s').textContent=d.current_state==='WORK'?'WORKING':'RESTING';
+    document.getElementById('wr-s').style.color=d.current_state==='WORK'?'var(--cyan)':'var(--muted)';
+    document.getElementById('wr-wb').style.width=d.work_pct+'%';
+    document.getElementById('wr-rb').style.width=d.rest_pct+'%';
+    document.getElementById('wr-wv').textContent=d.work_pct+'%';
+    document.getElementById('wr-rv').textContent=d.rest_pct+'%';
+    var bdg=document.getElementById('wr-bdg');
+    if(d.ratio_flag==='Overworking'){bdg.textContent='OVERWORKING';bdg.style.cssText='margin-top:7px;padding:4px 10px;border-radius:6px;font-family:DM Mono,monospace;font-size:9px;letter-spacing:1px;text-align:center;background:rgba(255,51,85,.08);color:var(--red);border:1px solid rgba(255,51,85,.2)';}
+    else if(d.ratio_flag==='Too Much Rest'){bdg.textContent='TOO MUCH REST';bdg.style.cssText='margin-top:7px;padding:4px 10px;border-radius:6px;font-family:DM Mono,monospace;font-size:9px;letter-spacing:1px;text-align:center;background:rgba(255,170,0,.08);color:var(--amber);border:1px solid rgba(255,170,0,.2)';}
+    else{bdg.textContent='GOOD BALANCE';bdg.style.cssText='margin-top:7px;padding:4px 10px;border-radius:6px;font-family:DM Mono,monospace;font-size:9px;letter-spacing:1px;text-align:center;background:rgba(0,255,136,.07);color:var(--green);border:1px solid rgba(0,255,136,.15)';}
+
+    samples++;totalPct+=d.intensity_pct;peakPct=Math.max(peakPct,d.intensity_pct);lastFat=d.fatigue_status;lastWork=d.work_pct;
+    document.getElementById('csv-n').innerHTML=samples+'<sub> readings</sub>';
+  }catch(e){ console.error('fetchData error:',e); }
+}
+
+// ── HW status ──
+async function checkHW(){
+  try{
+    var r=await fetch('/api/status');var d=await r.json();
+    var b=document.getElementById('hw-badge');var l=document.getElementById('hw-label');
+    if(d.connected){b.className='badge hw';l.textContent='USB CONNECTED';}
+    else{b.className='badge';l.textContent='SIMULATION';}
+    if(d.user){
+      var displayName = d.name || d.user;
+      var first = displayName.split(' ')[0];
+      document.getElementById('user-chip-label').textContent = first.toUpperCase();
+      document.getElementById('ud-name').textContent = displayName;
+      document.getElementById('ud-email').textContent = d.email || 'no email set';
+      document.getElementById('sp-welcome').textContent = 'Hey, '+first+'!';
+      // populate email delivery
+      var emailAddr = document.getElementById('del-email-addr');
+      if(emailAddr) emailAddr.textContent = d.email || '';
+      window._userEmail = d.email || '';
+      window._userName  = displayName;
+    }
+  }catch(e){}
+}
+setInterval(function(){if(!running)document.getElementById('hdr-clock').textContent=new Date().toLocaleTimeString();},1000);
+checkHW();
+
+// ── User dropdown ──
+function toggleUserMenu(){
+  var dd=document.getElementById('user-dropdown');
+  dd.classList.toggle('open');
+}
+document.addEventListener('click',function(e){
+  var chip=document.getElementById('user-chip');
+  if(chip&&!chip.contains(e.target)){
+    document.getElementById('user-dropdown').classList.remove('open');
+  }
+});
+
+// ── Report delivery ──
+var _delivery = 'pdf';
+function setDelivery(type){
+  _delivery=type;
+  document.getElementById('del-pdf').classList.toggle('active',type==='pdf');
+  document.getElementById('del-email').classList.toggle('active',type==='email');
+}
+
+// ── AI Report Modal ──
+var reportTab='live', selectedCsvFile=null, reportSnap={};
+
+function openReportModal(){
+  reportSnap={
+    reps:     document.getElementById('sv-reps').textContent,
+    peak_pct: document.getElementById('sv-peak').textContent.replace('%','').trim(),
+    avg_pct:  document.getElementById('sv-avg').textContent.replace('%','').trim(),
+    fatigue:  document.getElementById('sv-fat').textContent,
+    work_pct: document.getElementById('sv-work').textContent.replace('%','').trim(),
+    rest_pct: String(100-parseInt(document.getElementById('sv-work').textContent||'0')),
+    duration: document.getElementById('sv-dur').textContent,
+    readings: String(samples),
+    mode:     document.getElementById('hw-label').textContent,
+    muscle:   selMuscle,
+  };
+  document.getElementById('modal-form').style.display='block';
+  document.getElementById('modal-generating').style.display='none';
+  document.getElementById('report-modal').classList.add('open');
+}
+function closeReportModal(){
+  document.getElementById('report-modal').classList.remove('open');
+  document.getElementById('modal-form').style.display='block';
+  document.getElementById('modal-generating').style.display='none';
+}
+function switchTab(t){
+  reportTab=t;
+  document.querySelectorAll('.modal-tab').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.modal-section').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('sec-'+t).classList.add('active');
+}
+function onFileSelect(input){
+  if(input.files&&input.files[0]){
+    selectedCsvFile=input.files[0];
+    document.getElementById('file-name-display').textContent='\u2705 '+selectedCsvFile.name;
+  }
+}
+(function(){
+  var dz=document.getElementById('file-drop');
+  if(!dz) return;
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('drag-over');});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('drag-over');});
+  dz.addEventListener('drop',function(e){
+    e.preventDefault();dz.classList.remove('drag-over');
+    var f=e.dataTransfer.files[0];
+    if(f&&f.name.endsWith('.csv')){selectedCsvFile=f;document.getElementById('file-name-display').textContent='\u2705 '+f.name;}
+  });
+})();
+
+async function submitReport(){
+  document.getElementById('modal-form').style.display='none';
+  document.getElementById('modal-generating').style.display='block';
+  var isEmail = (_delivery==='email');
+  document.getElementById('modal-gen-msg').textContent = isEmail ? 'Sending report to your email...' : 'Building your PDF report...';
+  document.getElementById('modal-gen-sub').textContent  = isEmail ? 'Check your inbox in a moment' : 'This takes just a second';
+  try{
+    var html='';
+    if(reportTab==='csv'&&selectedCsvFile){
+      var fd=new FormData();
+      fd.append('csv_file',selectedCsvFile);
+      fd.append('muscle',selMuscle);
+      if(isEmail) fd.append('email', window._userEmail||'');
+      var r=await fetch('/api/generate_report',{method:'POST',body:fd});
+      var data=await r.json();
+      if(data.status==='ok') html=data.html; else throw new Error(data.message||'Server error');
+    } else {
+      var payload = Object.assign({},reportSnap);
+      if(isEmail) payload.email = window._userEmail||'';
+      var r=await fetch('/api/generate_report',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)});
+      var data=await r.json();
+      if(data.status==='ok') html=data.html; else throw new Error(data.message||'Server error');
+    }
+    if(isEmail){
+      if(!window._userEmail){
+        alert('No email address on your account. Please update your profile.');
+        closeReportModal(); return;
+      }
+      // Open mailto with report summary (browser email client)
+      var subject = encodeURIComponent('MuscleQuant AI — Session Report');
+      var body = encodeURIComponent(
+        'Hi '+( window._userName||'Athlete')+',\n\n'+
+        'Your MuscleQuant AI session report is ready.\n\n'+
+        'Muscle: '+(reportSnap.muscle||'N/A')+'\n'+
+        'Reps: '+(reportSnap.reps||0)+'\n'+
+        'Peak Intensity: '+(reportSnap.peak_pct||0)+'%\n'+
+        'Fatigue: '+(reportSnap.fatigue||'Normal')+'\n'+
+        'Duration: '+(reportSnap.duration||'00:00')+'\n\n'+
+        'To view the full PDF report, print it from the MuscleQuant dashboard.\n\n'+
+        '— MuscleQuant AI Team'
+      );
+      window.location.href='mailto:'+window._userEmail+'?subject='+subject+'&body='+body;
+      closeReportModal();
+    } else {
+      // Open in new window and trigger print/save as PDF
+      var win=window.open('','_blank');
+      if(!win){alert('Please allow popups for this site to download the report.');closeReportModal();return;}
+      win.document.write(html);
+      win.document.close();
+      setTimeout(function(){win.focus();win.print();},700);
+      closeReportModal();
+    }
+  }catch(e){
+    alert('Report error: '+e.message);
+    closeReportModal();
+  }
+}
+
+// ── Splash ──
+(function(){
+  // On page load, make sure idle screen is visible
+  var idle = document.getElementById('s-idle');
+  idle.style.display = 'flex';
+
+  var fill=document.getElementById('sp-fill');
+  var welcome=document.getElementById('sp-welcome');
+  var pct=0;
+  var iv=setInterval(function(){
+    pct+=2;fill.style.width=pct+'%';
+    if(pct>=70) welcome.classList.add('show');
+    if(pct>=100){
+      clearInterval(iv);
+      setTimeout(function(){
+        document.getElementById('splash').classList.add('fade');
+        setTimeout(function(){
+          document.getElementById('splash').style.display='none';
+          // Ensure idle is visible after splash
+          show('s-idle');
+        },800);
+      },500);
+    }
+  },30);
+})();
+</script>
+</body>
+</html>

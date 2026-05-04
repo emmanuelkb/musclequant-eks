@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: musclequant
+  labels: { app: musclequant, component: api }
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels: { app: musclequant, component: api }
+  template:
+    metadata:
+      labels: { app: musclequant, component: api }
+    spec:
+      serviceAccountName: musclequant-app
+      automountServiceAccountToken: true
+      # Phase 7 — restricted PSS profile (also enforced at the namespace level).
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: api
+          image: ${ECR_API_REPO}:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { name: http, containerPort: 8080 }
+          env:
+            - name: REPORT_GEN_URL
+              value: http://report-gen.musclequant.svc.cluster.local:8081
+            - name: WORK_THRESHOLD
+              value: "1200"
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: musclequant-app, key: DATABASE_URL } }
+            - name: SECRET_KEY
+              valueFrom: { secretKeyRef: { name: musclequant-app, key: SECRET_KEY } }
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+            initialDelaySeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            initialDelaySeconds: 30
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: tmp
+          emptyDir: { medium: Memory, sizeLimit: 64Mi }

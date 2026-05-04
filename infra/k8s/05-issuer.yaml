@@ -1,0 +1,7 @@
+# Phase 6 — TLS in transit. Self-signed for the demo; swap for ACM/Let's Encrypt in production.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}

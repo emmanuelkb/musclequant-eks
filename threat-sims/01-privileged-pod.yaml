@@ -1,0 +1,33 @@
+# Scenario 1 — Privilege escalation attempt.
+# An attacker who obtained credentials with CREATE pods in the musclequant namespace
+# attempts to schedule a privileged pod that mounts the host filesystem.
+#
+# Expected outcome: the namespace's `pod-security.kubernetes.io/enforce: restricted`
+# label causes the API server to REJECT this admission with a clear violation list.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: priv-escalation-attempt
+  namespace: musclequant
+  labels:
+    threat-sim: "scenario-1"
+spec:
+  hostPID: true
+  hostNetwork: true
+  containers:
+    - name: hostroot
+      image: alpine:3.20
+      command: ["sh", "-c", "chroot /host /bin/sh -c 'id; cat /etc/shadow' && sleep 3600"]
+      securityContext:
+        privileged: true
+        runAsUser: 0
+        capabilities:
+          add: ["SYS_ADMIN", "NET_ADMIN", "SYS_PTRACE"]
+      volumeMounts:
+        - name: hostroot
+          mountPath: /host
+  volumes:
+    - name: hostroot
+      hostPath:
+        path: /

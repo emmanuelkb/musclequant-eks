@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MuscleQuant AI — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;font-family:'Inter',sans-serif;overflow:hidden;}
+.layout{display:flex;height:100vh;}
+
+/* LEFT */
+.left{flex:0 0 46%;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0e7490 100%);display:flex;flex-direction:column;justify-content:space-between;padding:44px;position:relative;overflow:hidden;}
+.left::before{content:'';position:absolute;right:-80px;top:-80px;width:360px;height:360px;border-radius:50%;background:rgba(34,211,238,0.05);}
+.left::after{content:'';position:absolute;left:-60px;bottom:-80px;width:280px;height:280px;border-radius:50%;background:rgba(59,130,246,0.05);}
+.brand{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+.brand-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#22d3ee,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 30px rgba(34,211,238,0.3);}
+.brand-text h1{font-size:20px;font-weight:800;color:white;letter-spacing:-.5px;}
+.brand-text h1 em{color:#22d3ee;font-style:normal;}
+.brand-text p{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+.left-mid{position:relative;z-index:1;}
+.left-mid h2{font-size:36px;font-weight:800;color:white;line-height:1.15;letter-spacing:-1px;margin-bottom:14px;}
+.left-mid h2 em{color:#22d3ee;font-style:normal;display:block;}
+.left-mid p{font-size:14px;color:rgba(255,255,255,0.5);line-height:1.7;max-width:320px;}
+.feats{margin-top:26px;display:flex;flex-direction:column;gap:10px;}
+.feat{display:flex;align-items:center;gap:11px;font-size:13px;color:rgba(255,255,255,0.65);}
+.feat-dot{width:6px;height:6px;border-radius:50%;background:#22d3ee;flex-shrink:0;}
+.left-foot{font-size:11px;color:rgba(255,255,255,0.2);position:relative;z-index:1;}
+
+/* RIGHT */
+.right{flex:1;background:#f8fafc;display:flex;align-items:center;justify-content:center;padding:40px;position:relative;}
+.right::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 1px 1px,rgba(0,0,0,0.035) 1px,transparent 0);background-size:26px 26px;}
+.box{width:100%;max-width:390px;position:relative;z-index:1;}
+.panel{display:none;animation:fadeIn .25s ease;}
+.panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* USB CONNECT SCREEN */
+.usb-screen{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;}
+.usb-screen.active{display:flex;}
+.usb-ring{width:90px;height:90px;border-radius:50%;border:3px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:38px;margin-bottom:20px;position:relative;}
+.usb-ring.connected{border-color:#22d3ee;box-shadow:0 0 0 6px rgba(34,211,238,0.1);}
+.usb-spin{position:absolute;inset:-4px;border-radius:50%;border:3px solid transparent;border-top-color:#22d3ee;animation:spin 1s linear infinite;}
+.usb-spin.done{display:none;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.usb-title{font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px;}
+.usb-sub{font-size:14px;color:#64748b;margin-bottom:24px;}
+.usb-bar-wrap{width:220px;height:3px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:20px;}
+.usb-bar{height:100%;width:0%;background:linear-gradient(90deg,#22d3ee,#3b82f6);border-radius:3px;transition:width .1s linear;}
+.usb-dots{display:flex;gap:6px;margin-bottom:16px;}
+.usb-dot{width:8px;height:8px;border-radius:50%;background:#e2e8f0;}
+.usb-dot.lit{background:#22d3ee;animation:pulse .8s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.usb-skip{background:none;border:none;color:#94a3b8;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:4px;}
+.usb-skip:hover{color:#64748b;}
+
+/* WELCOME OVERLAY */
+.wov{display:none;position:fixed;inset:0;z-index:999;background:#0f172a;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.wov.show{display:flex;}
+.wov-icon{width:88px;height:88px;border-radius:20px;background:linear-gradient(135deg,#22d3ee,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:42px;box-shadow:0 0 60px rgba(34,211,238,0.35);animation:wPop .5s cubic-bezier(.34,1.56,.64,1) forwards;}
+@keyframes wPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.wov-hi{font-size:13px;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:3px;text-transform:uppercase;}
+.wov-name{font-size:36px;font-weight:800;color:white;letter-spacing:-1px;}
+.wov-name em{color:#22d3ee;font-style:normal;}
+.wov-sub{font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:1px;}
+.wov-bar-wrap{width:200px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-top:8px;}
+.wov-bar{height:100%;width:0%;background:linear-gradient(90deg,#22d3ee,#3b82f6);}
+
+/* FORM STYLES */
+.ftitle{margin-bottom:26px;}
+.ftitle h2{font-size:26px;font-weight:800;color:#0f172a;letter-spacing:-.5px;}
+.ftitle p{font-size:14px;color:#64748b;margin-top:5px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:700;color:#374151;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.field input{width:100%;padding:13px 15px;border-radius:10px;background:white;border:1.5px solid #e2e8f0;color:#0f172a;font-family:'Inter',sans-serif;font-size:15px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-autofill:none;}
+.field input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.field input::placeholder{color:transparent;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.submit-btn{width:100%;margin-top:6px;padding:14px;border-radius:11px;border:none;background:linear-gradient(135deg,#22d3ee,#3b82f6);color:white;font-family:'Inter',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(59,130,246,.25);display:flex;align-items:center;justify-content:center;gap:8px;}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(59,130,246,.4);}
+.submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;}
+.divider span{font-size:12px;color:#9ca3af;white-space:nowrap;font-weight:500;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e5e7eb;}
+.ghost-btn{width:100%;padding:13px;border-radius:11px;border:1.5px solid #e2e8f0;background:white;color:#374151;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.ghost-btn:hover{border-color:#3b82f6;color:#3b82f6;background:#f0f9ff;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:#64748b;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;padding:0;margin-bottom:20px;transition:color .2s;}
+.back-btn:hover{color:#3b82f6;}
+.err{display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:13px;font-weight:500;align-items:center;gap:8px;}
+.err.show{display:flex;}
+.ok{display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;font-size:13px;font-weight:500;align-items:center;gap:8px;}
+.ok.show{display:flex;}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;display:none;}
+@media(max-width:680px){.left{display:none;}.right{padding:28px 20px;}}
+</style>
+</head>
+<body>
+
+<!-- WELCOME OVERLAY -->
+<div class="wov" id="wov">
+  <div class="wov-icon">&#128170;</div>
+  <div class="wov-hi">Welcome back</div>
+  <div class="wov-name">Hey, <em id="wov-name">—</em>!</div>
+  <div class="wov-sub">Loading your dashboard...</div>
+  <div class="wov-bar-wrap"><div class="wov-bar" id="wov-bar"></div></div>
+</div>
+
+<div class="layout">
+  <!-- LEFT PANEL -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-icon">&#128170;</div>
+      <div class="brand-text">
+        <h1>Muscle<em>Quant</em> AI</h1>
+        <p>Surface EMG Monitoring</p>
+      </div>
+    </div>
+    <div class="left-mid">
+      <h2>Train smarter,<em>not harder.</em></h2>
+      <p>Real-time surface EMG monitoring powered by MyoWare 2.0 and ESP32. Track every rep, detect fatigue, and optimize your training.</p>
+      <div class="feats">
+        <div class="feat"><div class="feat-dot"></div>Live EMG signal visualization</div>
+        <div class="feat"><div class="feat-dot"></div>AI-powered fatigue detection</div>
+        <div class="feat"><div class="feat-dot"></div>Rep counter &amp; session goals</div>
+        <div class="feat"><div class="feat-dot"></div>Professional PDF reports</div>
+        <div class="feat"><div class="feat-dot"></div>9 muscle groups supported</div>
+      </div>
+    </div>
+    <div class="left-foot">© 2026 MuscleQuant AI &nbsp;·&nbsp; Capstone Project</div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right">
+    <div class="box">
+
+      <!-- SIGN IN -->
+      <div class="panel active" id="panel-login">
+        <div class="ftitle"><h2>Sign in</h2><p>Enter your credentials to access your dashboard</p></div>
+        <div class="field"><label>Username</label><input type="text" id="l-user" autocomplete="off" spellcheck="false"/></div>
+        <div class="field"><label>Password</label><input type="password" id="l-pass" autocomplete="off"/></div>
+        <button class="submit-btn" id="l-btn" onclick="doLogin()">
+          <div class="spin" id="l-spin"></div><span id="l-txt">Sign In</span>
+        </button>
+        <div class="err" id="l-err"><span>&#9888;&#65039;</span><span id="l-emsg"></span></div>
+        <div class="divider"><span>New to MuscleQuant?</span></div>
+        <button class="ghost-btn" onclick="go('register')">Create a free account</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="panel" id="panel-register">
+        <button class="back-btn" onclick="go('login')">&#8592; Back to sign in</button>
+        <div class="ftitle"><h2>Create account</h2><p>Fill in your details to get started</p></div>
+        <div class="row2">
+          <div class="field"><label>First Name</label><input type="text" id="r-fn" autocomplete="off"/></div>
+          <div class="field"><label>Last Name</label><input type="text" id="r-ln" autocomplete="off"/></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Username</label><input type="text" id="r-user" autocomplete="off" spellcheck="false"/></div>
+          <div class="field"><label>Age</label><input type="number" id="r-age" min="10" max="100" autocomplete="off"/></div>
+        </div>
+        <div class="field"><label>Password</label><input type="password" id="r-pass" autocomplete="new-password"/></div>
+        <div class="field"><label>Email Address</label><input type="email" id="r-email" autocomplete="off"/></div>
+        <button class="submit-btn" id="r-btn" onclick="doRegister()">
+          <div class="spin" id="r-spin"></div><span id="r-txt">Create Account</span>
+        </button>
+        <div class="err" id="r-err"><span>&#9888;&#65039;</span><span id="r-emsg"></span></div>
+        <div class="ok"  id="r-ok" ><span>&#9989;</span><span id="r-omsg"></span></div>
+      </div>
+
+      <!-- USB CONNECT -->
+      <div class="panel" id="panel-usb">
+        <div class="usb-screen active" id="usb-screen">
+          <div class="usb-ring" id="usb-ring">
+            <div class="usb-spin" id="usb-spin"></div>
+            <span id="usb-icon">&#128268;</span>
+          </div>
+          <div class="usb-title" id="usb-title">Connect Your Device</div>
+          <div class="usb-sub" id="usb-sub">Plug in the ESP32 via USB-C to begin</div>
+          <div class="usb-bar-wrap"><div class="usb-bar" id="usb-bar"></div></div>
+          <div class="usb-dots">
+            <div class="usb-dot lit" id="ud1"></div>
+            <div class="usb-dot" id="ud2"></div>
+            <div class="usb-dot" id="ud3"></div>
+          </div>
+          <button class="usb-skip" onclick="skipUSB()">Skip — continue without hardware</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+var _pendingName = '';
+
+function go(p){
+  document.querySelectorAll('.panel').forEach(function(e){e.classList.remove('active');});
+  document.querySelectorAll('.err,.ok').forEach(function(e){e.classList.remove('show');});
+  document.getElementById('panel-'+p).classList.add('active');
+}
+function busy(btn,spin,txt,on){
+  document.getElementById(btn).disabled=on;
+  document.getElementById(spin).style.display=on?'flex':'none';
+  document.getElementById(txt).style.display=on?'none':'inline';
+}
+function showErr(msgEl,wrapEl,msg){
+  document.getElementById(msgEl).textContent=msg;
+  document.getElementById(wrapEl).className='err show';
+}
+function showOk(msgEl,wrapEl,msg){
+  document.getElementById(msgEl).textContent=msg;
+  document.getElementById(wrapEl).className='ok show';
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  var active=document.querySelector('.panel.active');
+  if(!active)return;
+  if(active.id==='panel-login')doLogin();
+  else if(active.id==='panel-register')doRegister();
+});
+
+async function doLogin(){
+  document.querySelectorAll('.err').forEach(function(e){e.classList.remove('show');});
+  var u=document.getElementById('l-user').value.trim();
+  var p=document.getElementById('l-pass').value.trim();
+  if(!u||!p){showErr('l-emsg','l-err','Please enter your username and password.');return;}
+  busy('l-btn','l-spin','l-txt',true);
+  try{
+    var r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    var d=await r.json();
+    if(d.status==='ok'){_pendingName=d.name||u;showUSB();}
+    else showErr('l-emsg','l-err',d.message||'Incorrect username or password.');
+  }catch(e){showErr('l-emsg','l-err','Cannot connect to server.');}
+  finally{busy('l-btn','l-spin','l-txt',false);}
+}
+
+async function doRegister(){
+  document.querySelectorAll('.err,.ok').forEach(function(e){e.classList.remove('show');});
+  var fn=document.getElementById('r-fn').value.trim();
+  var ln=document.getElementById('r-ln').value.trim();
+  var u=document.getElementById('r-user').value.trim().toLowerCase();
+  var p=document.getElementById('r-pass').value.trim();
+  var ag=document.getElementById('r-age').value.trim();
+  var em=document.getElementById('r-email').value.trim();
+  if(!fn||!u||!p){showErr('r-emsg','r-err','First name, username and password are required.');return;}
+  if(p.length<6){showErr('r-emsg','r-err','Password must be at least 6 characters.');return;}
+  busy('r-btn','r-spin','r-txt',true);
+  try{
+    var r=await fetch('/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({firstname:fn,lastname:ln,username:u,password:p,age:ag,email:em})});
+    var d=await r.json();
+    if(d.status==='ok'){
+      showOk('r-omsg','r-ok','Account created! Signing you in...');
+      setTimeout(async function(){
+        var r2=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+        var d2=await r2.json();
+        if(d2.status==='ok'){_pendingName=d.name||fn;showUSB();}
+      },800);
+    } else showErr('r-emsg','r-err',d.message||'Registration failed.');
+  }catch(e){showErr('r-emsg','r-err','Cannot connect to server.');}
+  finally{busy('r-btn','r-spin','r-txt',false);}
+}
+
+function showUSB(){
+  go('usb');
+  var pct=0;
+  var bar=document.getElementById('usb-bar');
+  var dots=[document.getElementById('ud1'),document.getElementById('ud2'),document.getElementById('ud3')];
+  var iv=setInterval(function(){
+    pct+=2;
+    bar.style.width=pct+'%';
+    if(pct===34){dots[1].classList.add('lit');document.getElementById('usb-sub').textContent='Initializing serial connection...';}
+    if(pct===66){dots[2].classList.add('lit');document.getElementById('usb-sub').textContent='Verifying sensor data...';}
+    if(pct>=100){
+      clearInterval(iv);
+      var ring=document.getElementById('usb-ring');
+      var spinEl=document.getElementById('usb-spin');
+      ring.classList.add('connected');
+      spinEl.classList.add('done');
+      document.getElementById('usb-icon').textContent='✓';
+      document.getElementById('usb-title').textContent='Device Connected';
+      document.getElementById('usb-sub').textContent='MyoWare 2.0 ready';
+      ring.style.color='#22d3ee';
+      ring.style.fontSize='32px';
+      setTimeout(function(){showWelcome(_pendingName);},1200);
+    }
+  },80);
+}
+
+function skipUSB(){showWelcome(_pendingName);}
+
+function showWelcome(name){
+  var first=name.split(' ')[0];
+  document.getElementById('wov-name').textContent=first;
+  document.getElementById('wov').classList.add('show');
+  var pct=0,bar=document.getElementById('wov-bar');
+  var iv=setInterval(function(){
+    pct+=2;bar.style.width=pct+'%';
+    if(pct>=100){clearInterval(iv);window.location.href='/';}
+  },22);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+# Phase 5 — Kubernetes NetworkPolicy: default-deny + targeted allow.
+# Note: requires a CNI that enforces NetworkPolicies. Amazon VPC CNI supports this since v1.14
+# when ENABLE_NETWORK_POLICY=true. See troubleshooting in the README if traffic looks unblocked.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: musclequant
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# api: ingress only from the ALB (kube-system), egress to report-gen + DNS + RDS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api
+  namespace: musclequant
+spec:
+  podSelector:
+    matchLabels: { app: musclequant, component: api }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: kube-system }
+      ports:
+        - { protocol: TCP, port: 8080 }
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { app: musclequant, component: report-gen }
+      ports:
+        - { protocol: TCP, port: 8081 }
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: kube-system }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # RDS — Postgres on the VPC private CIDR. Tighten if you have a smaller DB CIDR.
+    - to:
+        - ipBlock:
+            cidr: 10.20.0.0/16
+      ports:
+        - { protocol: TCP, port: 5432 }
+    # HTTPS to AWS APIs (Secrets Manager, STS for IRSA).
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32 # explicitly deny IMDS
+      ports:
+        - { protocol: TCP, port: 443 }
+---
+# report-gen: ingress only from api, egress only DNS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: report-gen
+  namespace: musclequant
+spec:
+  podSelector:
+    matchLabels: { app: musclequant, component: report-gen }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: musclequant, component: api }
+      ports:
+        - { protocol: TCP, port: 8081 }
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: kube-system }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
