@@ -30,5 +30,8 @@ __pycache__/
 # Threat-sim run output (committed copy lives in docs/)
 docs/threat-sim-output.txt
 
+# Playwright MCP scratch (browser snapshots, console logs)
+.playwright-mcp/
+
 # Assignment brief (professor's content — keep local)
 Signature Project- CS581.docx
