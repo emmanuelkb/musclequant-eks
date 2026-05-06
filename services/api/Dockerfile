@@ -17,6 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py ./
 COPY templates ./templates
+# Ensure the unprivileged USER below can read the source files. Some host
+# filesystems (e.g. macOS) ship templates as mode 600, which COPY preserves.
+RUN chmod -R a+rX /app
 
 USER 10001
 EXPOSE 8080
