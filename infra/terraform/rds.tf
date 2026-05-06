@@ -1,3 +1,11 @@
+# Auto-discover a current Postgres 16.x version so the apply doesn't break
+# when AWS retires older minor versions.
+data "aws_rds_engine_version" "postgres" {
+  engine                 = "postgres"
+  parameter_group_family = "postgres16"
+  default_only           = true
+}
+
 resource "random_password" "db" {
   length  = 24
   special = true
@@ -37,7 +45,7 @@ module "rds" {
   identifier = "${var.project_name}-db"
 
   engine               = "postgres"
-  engine_version       = "16.4"
+  engine_version       = data.aws_rds_engine_version.postgres.version
   family               = "postgres16"
   major_engine_version = "16"
   instance_class       = var.db_instance_class
