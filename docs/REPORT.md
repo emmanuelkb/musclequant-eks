@@ -35,6 +35,10 @@ to fail: the failure path is the proof that the control works.
 
 ## 2. Architecture design and justification
 
+![MuscleQuant AI on AWS EKS — full architecture](images/architecture.png)
+
+*Figure 1. End-to-end architecture: VPC layout, EKS namespaces, IRSA trust paths, encryption, observability, and the two threat overlays.*
+
 ### 2.1 Trust boundaries
 
 There are four trust boundaries in this architecture. The controls in later
@@ -168,6 +172,10 @@ The Kubernetes side is similarly narrow. The app's Role
 Pods inside its own namespace. No cluster-scoped permissions, no write access
 to anything.
 
+![IRSA trust policy on the musclequant-app role pinning the role to one ServiceAccount](images/iam-irsa-trust.png)
+
+*Figure 2. The `musclequant-app` IAM role's trust policy. The `StringEquals` condition pins the role to `system:serviceaccount:musclequant:musclequant-app` — no other workload, in any namespace, can assume this role even with a valid OIDC token.*
+
 ### 3.2 Network security (Phase 5)
 
 Three layers of controls overlap in the network plane:
@@ -190,6 +198,10 @@ NetworkPolicy enforcement requires a CNI that implements them. In Amazon EKS
 this is the VPC CNI with `ENABLE_NETWORK_POLICY=true`, which is the default
 in cluster versions ≥ 1.30 with the `vpc-cni` add-on at a recent revision.
 
+![NetworkPolicies in the musclequant namespace](images/networkpolicy-list.png)
+
+*Figure 3. `kubectl get networkpolicy -n musclequant -o wide` showing the default-deny policy plus the two named-allow policies.*
+
 ### 3.3 Data security (Phase 6)
 
 A single customer-managed KMS key with annual rotation handles encryption at
@@ -205,6 +217,10 @@ rest across:
 Funneling everything through one CMK keeps the audit story straightforward.
 The key policy plus the CloudTrail decrypt log describe, between them,
 everywhere the encryption boundary actually crosses.
+
+![Secrets Manager entry showing CMK encryption](images/secretsmanager-cmk.png)
+
+*Figure 4. The `musclequant/app` secret in AWS Secrets Manager, encrypted with the project CMK (`alias/musclequant-main`).*
 
 For data in transit, RDS enforces TLS through the `rds.force_ssl=1`
 parameter, and the SQLAlchemy URL emitted into Secrets Manager already
@@ -240,6 +256,10 @@ enhanced (Inspector-backed) scanning with `CONTINUOUS_SCAN`. A lifecycle
 policy prunes untagged images after one day and keeps only the last ten
 tagged.
 
+![ECR repository with scan-on-push enabled](images/ecr-scan-on-push.png)
+
+*Figure 5. The `musclequant/api` ECR repository with KMS encryption, scan-on-push, and Inspector-backed enhanced scanning.*
+
 At runtime, the `musclequant` namespace is labeled
 `pod-security.kubernetes.io/enforce=restricted`. Any pod that violates the
 restricted PSS profile is rejected at API-server admission. Each Deployment
@@ -261,6 +281,10 @@ Setting these on the pod spec is intentional duplication. If a future
 operator removes the namespace label by accident, the workloads do not
 silently weaken.
 
+![Pod securityContext from kubectl describe](images/pod-securitycontext.png)
+
+*Figure 6. `kubectl describe pod -n musclequant -l component=api`, securityContext block — non-root, read-only root filesystem, all capabilities dropped.*
+
 ### 3.5 Monitoring and logging (Phase 8)
 
 Five log streams converge on CloudWatch:
@@ -281,6 +305,14 @@ Between these, we get coverage across the kill chain. Flow logs catch
 network-level anomalies. Audit logs catch API-server-level intent like the
 attacker's `kubectl apply`. Runtime monitoring catches what the container
 actually did. CloudTrail catches the AWS API calls that follow.
+
+![EKS control-plane logging tab in the AWS console](images/eks-logging.png)
+
+*Figure 7. EKS observability tab confirming all five control-plane log types are streaming to CloudWatch.*
+
+![GuardDuty EKS protection settings](images/guardduty-features.png)
+
+*Figure 8. GuardDuty with EKS Audit Logs and Runtime Monitoring both enabled.*
 
 ## 4. Threat model and mitigations
 
@@ -311,6 +343,10 @@ Both scenarios are scripted in `threat-sims/run.sh` and produce a transcript
 in `docs/threat-sim-output.txt` that the demo video can quote directly. Both
 are meant to fail. The failure path is what proves the control works.
 
+![PSS rejection of privileged pod](images/threat-sim-pss-reject.png)
+
+*Figure 9. `kubectl apply -f 01-privileged-pod.yaml` rejected at admission with the full PSS violation list.*
+
 Scenario A: privilege escalation (T1). We craft a manifest
 (`threat-sims/01-privileged-pod.yaml`) that turns on `hostPID`,
 `hostNetwork`, and `privileged: true`, mounts `/` from the host, and adds
@@ -338,6 +374,10 @@ three escalations:
 Each step prints `[BLOCKED]` to the transcript on failure. CloudTrail records
 the `AccessDenied` attempts. Once GuardDuty has a baseline, it surfaces them
 as anomalous runtime activity.
+
+![IMDS and Secrets Manager calls blocked from the attacker pod](images/threat-sim-imds-blocked.png)
+
+*Figure 10. Threat-sim Scenario B: IMDSv2 token request times out (hop limit), and a credential-less Secrets Manager call returns AccessDenied.*
 
 ## 5. Lessons learned
 
@@ -424,3 +464,87 @@ make down
 | `threat-sims/run.sh` | Both threat scenarios scripted |
 | `docs/architecture.drawio.xml` | Editable architecture diagram |
 | `Makefile` | One-button up/down/everything in between |
+
+## 8. Appendix C — Compliance mapping
+
+The table below maps each control to the relevant NIST SP 800-53 Rev. 5
+control families and the CIS Amazon EKS Benchmark v1.5. The mapping is
+intentionally narrow: one control per row, no double-counting.
+
+| Control implemented | NIST 800-53 | CIS EKS Benchmark | Where in repo |
+|---|---|---|---|
+| IRSA per ServiceAccount, scoped to one ARN | AC-2, AC-6, IA-5 | 3.1.1, 4.1.5 | `infra/terraform/iam-irsa.tf` |
+| Kubernetes RBAC, namespace-scoped read-only | AC-3, AC-6 | 4.1.1, 4.1.3 | `infra/k8s/02-rbac.yaml` |
+| Pod Security Standards `restricted` enforced | CM-7, SI-3 | 5.2.1–5.2.9 | `infra/k8s/00-namespace.yaml` |
+| Default-deny NetworkPolicy + named allow | SC-7, AC-4 | 5.3.2 | `infra/k8s/11-networkpolicy.yaml` |
+| IMDSv2 + hop-limit = 1 | AC-3, SC-7 | 3.1.4 | `infra/terraform/eks.tf` |
+| KMS CMK envelope encryption (EKS Secrets, EBS, RDS, Secrets Manager, ECR, CloudWatch) | SC-12, SC-13, SC-28 | 5.4.1, 5.4.2 | `infra/terraform/kms.tf` |
+| TLS in transit (RDS `force_ssl`, ALB HTTPS) | SC-8, SC-13 | 1.2.x, 5.4.2 | `infra/terraform/rds.tf`, `infra/k8s/10-ingress.yaml` |
+| ECR scan-on-push + Inspector enhanced scanning | RA-5, SI-2 | 5.1.1 | `infra/terraform/ecr.tf` |
+| Non-root container, read-only root FS, drop ALL caps | CM-7, SI-3 | 5.2.x | `services/*/Dockerfile`, `infra/k8s/07-*`, `08-*` |
+| EKS audit + control-plane logs to CloudWatch | AU-2, AU-3, AU-9 | 2.1.1 | `infra/terraform/eks.tf` |
+| VPC Flow Logs | AU-2, SC-7 | — | `infra/terraform/vpc.tf` |
+| GuardDuty (EKS Audit + Runtime Monitoring) | SI-4, IR-4 | — | `infra/terraform/guardduty.tf` |
+| Secrets Manager, never plaintext on disk | SC-12, SC-28 | 5.4.1 | `infra/terraform/secrets.tf` + ESO |
+| Customer-managed key rotation enabled | SC-12 | — | `infra/terraform/kms.tf` |
+| Terraform-managed infrastructure (drift-detectable) | CM-2, CM-6 | — | `infra/terraform/` |
+
+The mapping is not a substitute for an audit. It is a navigation aid that
+shows a reviewer where each rubric item is implemented in a single line.
+
+## 9. Appendix D — Cost estimate
+
+Sustained-running cost, on-demand, `us-east-1`, no Reserved or Savings Plan
+discounts. Numbers from the AWS Pricing Calculator, May 2026.
+
+| Component | Spec | Hourly | Monthly (730 hr) |
+|---|---|---|---|
+| EKS control plane | 1 cluster | $0.10 | $73.00 |
+| EC2 worker nodes | 2 × t3.medium on-demand | $0.0832 | $60.74 |
+| EBS gp3 volumes | 2 × 30 GB | $0.0066 | $4.80 |
+| RDS Postgres | db.t3.micro single-AZ + 20 GB gp3 | $0.0202 | $14.74 |
+| NAT Gateway | 1 gateway, ~5 GB/day egress | $0.052 | $37.96 |
+| ALB | 1 + ~10 LCUs | $0.0335 | $24.46 |
+| Secrets Manager | 1 secret + 1k API calls/mo | — | $0.42 |
+| ECR storage | ~2 GB layers | — | $0.20 |
+| KMS CMK | 1 key + ~10k requests/mo | — | $1.03 |
+| GuardDuty | EKS Audit + Runtime Monitoring | — | ~$5.00 |
+| CloudWatch Logs | 7-day retention, ~3 GB ingest | — | $1.50 |
+| **Total** | | **~$0.31/hr** | **~$224/mo** |
+
+For the demo, `make up` and `make down` bracket roughly 90 minutes including
+recording time, so the actual run-cost is **under $1 USD**.
+
+The numbers above are *running* cost. KMS deletion is windowed (7-day
+default), so destroying then re-creating the same key inside that window
+costs nothing extra. The Secrets Manager secret in this Terraform sets
+`recovery_window_in_days = 0` so it is removable immediately.
+
+## 10. Appendix E — What I'd add for production
+
+The current Terraform is a working defense-in-depth template, but a real
+production rollout would also include:
+
+1. **Private API endpoint.** Flip `cluster_endpoint_public_access = false`
+   and reach the cluster only through a Session Manager bastion or VPN.
+2. **Per-AZ NAT gateways** (`single_nat_gateway = false`,
+   `one_nat_gateway_per_az = true`) so a single AZ failure does not blackhole
+   pod egress.
+3. **Multi-AZ RDS** with `backup_retention_period = 14` and snapshots replicated to a
+   second region.
+4. **ACM-managed real cert** against a Route 53 hosted zone, not the
+   self-signed Issuer.
+5. **AWS WAF** on the ALB with the AWS managed core rule set + a SQLi rule
+   group, and a rate-based rule for credential-stuffing.
+6. **CI shift-left**: `tfsec`, `checkov`, and `kube-linter` running in GitHub
+   Actions on every PR; image build in GitHub Actions with image signing
+   (`cosign`) and admission-time signature verification (`policy-controller`
+   or `connaisseur`).
+7. **External Secrets refresh on rotation**, paired with Secrets Manager
+   rotation Lambda for the DB password every 30 days.
+8. **Centralized log destination** (Security Hub or a SIEM such as Splunk)
+   instead of CloudWatch alone.
+9. **Backup vault** for RDS automated snapshots + EBS snapshots, with vault
+   lock and a separate KMS key.
+10. **Disaster-recovery runbook**: documented RTO/RPO targets, a tested
+    region-failover procedure, and a cross-region read replica for RDS.
