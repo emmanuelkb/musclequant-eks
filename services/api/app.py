@@ -122,6 +122,10 @@ def connect_serial() -> bool:
 
 connected = connect_serial()
 
+# Run schema bootstrap at module load so it works under gunicorn (where the
+# `if __name__ == "__main__"` block never executes). Idempotent.
+init_db()
+
 
 def get_emg_value():
     global ser, connected
