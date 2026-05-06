@@ -3,7 +3,7 @@
 **Course:** CS581 — Cloud Security Engineering
 **Project:** Signature Project
 **Application:** MuscleQuant AI — surface EMG monitoring for athletes
-**Author:** Emmanuel Owusu
+**Authors:** Emmanuel Owusu, Gelin Deng
 
 ---
 
@@ -381,91 +381,29 @@ as anomalous runtime activity.
 
 ## 5. Lessons learned
 
-A few things came up while building this that the assignment brief didn't
-make obvious. They feel worth recording.
+Defense in depth pays off the moment a single control regresses. The IMDS
+hop-limit alone would block Scenario B. The NetworkPolicy alone would also
+block Scenario B. Either one regressing accidentally leaves the system safe,
+and the cost of layering them is roughly one line of HCL each.
 
-The case for defense in depth gets a lot more concrete once you sit down and
-work out what fails when a control regresses. The IMDS hop-limit alone would
-block scenario B. The NetworkPolicy alone would also block scenario B.
-Either one regressing accidentally leaves the system safe. The cost of
-layering them is roughly one line of HCL each. That math is hard to argue
-with.
+IRSA scope, not IAM role count, is the useful unit when reviewing IAM. The
+lazy choice would have been one shared role across many ServiceAccounts.
+Instead, the IRSA module is invoked three times, each role's policy document
+one or two statements long. The audit story becomes "this one secret is read
+by exactly one role, assumed by exactly one ServiceAccount, in exactly one
+namespace" — verifiable in a minute.
 
-IRSA scope, not IAM role count, turns out to be the useful unit when
-reviewing IAM. The lazy choice would have been one shared role across many
-ServiceAccounts. Instead, the IRSA module is invoked three times, each role
-with a policy document one or two statements long. The audit story becomes
-"this one secret is read by exactly one role, assumed by exactly one
-ServiceAccount, in exactly one namespace," which a human reviewer can verify
-in a minute.
+The cost knobs in this Terraform are deliberately visible.
+`single_nat_gateway`, `multi_az = false` on RDS, `db.t3.micro`, and a single
+managed node group keep the demo cluster under a dollar an hour. Every one
+would flip in production. They are passed as named arguments to the module
+calls rather than buried in defaults, so the next operator can see the
+cost-versus-safety trade in one place. Tear-down matters too:
+`recovery_window_in_days = 0` on the secret is intentional, so a forgotten
+secret can't keep a recovery window open and block the next `terraform
+apply`.
 
-Pod Security Standards is doing more than it looks. Because the restricted
-profile rejects a long list of flags at admission, a single namespace label
-removes the need to grep every workload's `securityContext` for forgotten
-settings. The pod-level fields are still set explicitly here, for defense in
-depth, but the namespace label is the one control I would never remove
-first.
-
-The cost knobs in this Terraform are deliberately visible. `single_nat_gateway`,
-`multi_az = false` on RDS, `db.t3.micro`, and a single managed node group
-keep the demo cluster under a dollar an hour. Every one of those would flip
-in production. They are passed as named arguments to the module calls rather
-than buried in defaults so the next person can see the cost-versus-safety
-trade in one place and decide whether to flip it.
-
-Self-signed TLS is not the same thing as no TLS. The ALB still terminates
-TLS, the cipher suite is the AWS default, and the browser warning is a UX
-problem, not a confidentiality one. Swapping in an ACM-issued cert for a
-real domain is a one-resource change. We chose to keep the demo's HTTPS path
-intact rather than punt to plain HTTP and pretend in the report.
-
-Tear-down cost matters about as much as stand-up cost in a course project.
-`make down` removes everything in roughly ten minutes, including the ECR
-repos (`force_delete = true`) and the Secrets Manager secret
-(`recovery_window_in_days = 0`). That last setting is not the production
-default. It is zero here on purpose, so a forgotten secret cannot keep a
-recovery window open and block the next `terraform apply`.
-
-## 6. Appendix A — End-to-end command reference
-
-```bash
-# Provision and deploy
-make up                  # ≈ 22 min total
-# What that runs:
-#   make tf/apply         (~18 min: VPC, EKS, RDS, IAM, helm releases)
-#   make images/push      (~3  min: docker buildx + ECR push)
-#   make manifests/apply  (~2  min: kubectl apply, cert import, ALB ready)
-
-# Validate
-make pods                # pods across the namespaces we use
-make app/url             # ALB hostname for the browser
-
-# Run threats
-make threat/run          # writes docs/threat-sim-output.txt
-
-# Tear down
-make down
-```
-
-## 7. Appendix B — File index
-
-| Path | Purpose |
-|---|---|
-| `services/api/` | Flask api service — auth, EMG ingest, frontend |
-| `services/report-gen/` | Stateless HTML report renderer |
-| `infra/terraform/eks.tf` | EKS cluster, node group, IMDS hop-limit |
-| `infra/terraform/rds.tf` | Postgres, encrypted, force_ssl |
-| `infra/terraform/iam-irsa.tf` | All three IRSA roles |
-| `infra/terraform/secrets.tf` | DB URL & Flask key in Secrets Manager |
-| `infra/terraform/guardduty.tf` | Detector + EKS audit + runtime monitoring |
-| `infra/k8s/00-namespace.yaml` | PSS=restricted enforcement |
-| `infra/k8s/04-externalsecret.yaml` | Sync from Secrets Manager |
-| `infra/k8s/11-networkpolicy.yaml` | Default-deny + allow rules |
-| `threat-sims/run.sh` | Both threat scenarios scripted |
-| `docs/architecture.drawio.xml` | Editable architecture diagram |
-| `Makefile` | One-button up/down/everything in between |
-
-## 8. Appendix C — Compliance mapping
+## 6. Appendix A — Compliance mapping
 
 The table below maps each control to the relevant NIST SP 800-53 Rev. 5
 control families and the CIS Amazon EKS Benchmark v1.5. The mapping is
@@ -492,7 +430,7 @@ intentionally narrow: one control per row, no double-counting.
 The mapping is not a substitute for an audit. It is a navigation aid that
 shows a reviewer where each rubric item is implemented in a single line.
 
-## 9. Appendix D — Cost estimate
+## 7. Appendix B — Cost estimate
 
 Sustained-running cost, on-demand, `us-east-1`, no Reserved or Savings Plan
 discounts. Numbers from the AWS Pricing Calculator, May 2026.
@@ -520,7 +458,7 @@ default), so destroying then re-creating the same key inside that window
 costs nothing extra. The Secrets Manager secret in this Terraform sets
 `recovery_window_in_days = 0` so it is removable immediately.
 
-## 10. Appendix E — What I'd add for production
+## 8. Appendix C — What we'd add for production
 
 The current Terraform is a working defense-in-depth template, but a real
 production rollout would also include:
